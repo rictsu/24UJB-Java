@@ -12,15 +12,16 @@ public class BoardDAO extends JDBConnect {
 		super(application);
 
 	}
+
 	public int deletePost(BoardDTO dto) {
-		int result=0;
+		int result = 0;
 		try {
 			String query = "DELETE FROM board WHERE num =?";
-			
+
 			psmt = con.prepareStatement(query);
 			psmt.setString(1, dto.getNum());
 			result = psmt.executeUpdate();
-		}catch(Exception e) {
+		} catch (Exception e) {
 			System.out.println("게시물 삭제 중 예외 발생");
 			e.printStackTrace();
 		}
@@ -151,4 +152,44 @@ public class BoardDAO extends JDBConnect {
 		}
 		return bbs;
 	}
+
+	public List<BoardDTO> selectListPage(Map<String, Object> map){
+		List<BoardDTO> bbs =  new Vector<BoardDTO>();
+		
+		String query = " SELECT * FROM ( "
+				+" SELECT Tb.*, ROWNUM rNum FROM ( "
+				+"		SELECT * FROM board ";
+		
+		if(map.get("searchWord") != null) {
+			query +=" WHERE " +map.get("searchField")
+			+" LIKE '%" + map.get("searchWord")+"%' ";
+		}
+		query +="		ORDER BY num DESC "
+				+"		) Tb "
+				+" ) "
+				+" WHERE rNum BETWEEN ? AND ?";
+		try {
+			psmt = con.prepareStatement(query);
+			psmt.setString(1, map.get("start").toString());
+			psmt.setString(2, map.get("end").toString());
+			
+			rs = psmt.executeQuery();
+			
+			while(rs.next()) {
+				BoardDTO dto = new BoardDTO();
+				dto.setNum(rs.getString("num"));
+				dto.setTitle(rs.getString("title"));
+				dto.setContent(rs.getString("content"));
+				dto.setPostdate(rs.getDate("postdate"));
+				dto.setId(rs.getString("id"));
+				dto.setVisitcount(rs.getString("visitcount"));
+				
+				bbs.add(dto);
+			}}
+		catch(Exception e) {
+			System.out.println("게시물 조회 중 예외 발생");
+			e.printStackTrace();
+		}
+		return bbs;
+		}
 }
